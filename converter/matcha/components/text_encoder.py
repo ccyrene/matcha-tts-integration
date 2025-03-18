@@ -114,8 +114,7 @@ class RotaryPositionalEmbeddings(nn.Module):
 
         self.base = base
         self.d = int(d)
-        # self.cos_cached:Optional[torch.Tensor] = None
-        # self.sin_cached:Optional[torch.Tensor] = None
+        
         self.cos_cached=torch.rand(0)
         self.sin_cached=torch.rand(0)
 
@@ -148,10 +147,6 @@ class RotaryPositionalEmbeddings(nn.Module):
 
         self.cos_cached = idx_theta2.cos()[:, None, None, :]
         self.sin_cached = idx_theta2.sin()[:, None, None, :]
-        # print(f"self.cos_cached: {type(self.cos_cached)}")
-        # print(f"self.sin_cached: {type(self.sin_cached)}")
-        # self.cos_cached = idx_theta2.cos().unsqueeze(1).unsqueeze(2)
-        # self.sin_cached = idx_theta2.sin().unsqueeze(1).unsqueeze(2)
         
     def _neg_half(self, x: torch.Tensor):
         # $\frac{d}{2}$
@@ -238,26 +233,15 @@ class MultiHeadAttention(nn.Module):
         k_size = key.size()
         b, d, t_s, t_t = (k_size[0], k_size[1], k_size[2], query.size(2))
         
-        # print(f"self.n_heads: {self.n_heads}")
-        
-        # print(f"(0)query: {query.shape}")
-        # print(f"(0)key: {key.shape}")
-        # print(f"(0)value: {value.shape}")
-        query_shape = query.shape
-        key_shape = key.shape
-        value_shape = value.shape
-        
+        h = self.n_heads
+        c = d // h
+
         # query = rearrange(query, "b (h c) t-> b h t c", h=self.n_heads)
         # key = rearrange(key, "b (h c) t-> b h t c", h=self.n_heads)
         # value = rearrange(value, "b (h c) t-> b h t c", h=self.n_heads)
-        
-        query = query.view(query_shape[0], self.n_heads, query_shape[-1], query_shape[1]//self.n_heads)
-        key = key.view(key_shape[0], self.n_heads, key_shape[-1], key_shape[1]//self.n_heads)
-        value = value.view(value_shape[0], self.n_heads, value_shape[-1], value_shape[1]//self.n_heads)
-        
-        # print(f"(1)query: {query.shape}")
-        # print(f"(1)key: {key.shape}")
-        # print(f"(1)value: {value.shape}")
+        query = query.view(b, h, c, t_t).permute(0, 1, 3, 2)  # (b, h, t, c)
+        key = key.view(b, h, c, t_t).permute(0, 1, 3, 2)      # (b, h, t, c)
+        value = value.view(b, h, c, t_t).permute(0, 1, 3, 2)  # (b, h, t, c)
 
         query = self.query_rotary_pe(query)
         key = self.key_rotary_pe(key)

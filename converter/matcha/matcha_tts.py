@@ -94,7 +94,9 @@ class MatchaTTS(nn.Module):  # 🍵
         encoder_outputs = mu_y[:, :, :y_max_length]
 
         # Generate sample tracing the probability flow
+        
         decoder_outputs = self.decoder(mu_y, y_mask, nfe, temperature, spks)
+
         decoder_outputs = decoder_outputs[:, :, :y_max_length]
 
         return denormalize(decoder_outputs, self.mel_mean, self.mel_std)
