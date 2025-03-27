@@ -416,13 +416,25 @@ class TextEncoder(nn.Module):
             x_mask (torch.Tensor): mask for the text input
                 shape: (batch_size, 1, max_text_length)
         """
+        batch = x.shape[0]
+        # print(f"(0)x.shape: {x.shape}")
         x = self.emb(x) * math.sqrt(self.n_channels)
+        # print(f"(1)x.shape: {x.shape}")
         x = torch.transpose(x, 1, -1)
-        x_mask = torch.unsqueeze(sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
+        # print(f"(2)x.shape: {x.shape}")
+        # x_mask = torch.unsqueeze(sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
+        x_mask = sequence_mask(x_lengths, x.size(2)).repeat(batch, 1, 1).to(x.dtype)
+        # x_mask=sequence_mask(x_lengths, x.size(2))
+        # print(f"(3)x.shape: {x.shape}")
+        # print(f"(3)x_mask.shape: {x_mask.shape}")
 
         x = self.prenet(x, x_mask)
         if self.n_spks > 1 and spks is not None:
             x = torch.cat([x, spks.unsqueeze(-1).repeat(1, 1, x.shape[-1])], dim=1)
+        
+        # print(f"(4)x.shape: {x.shape}")
+        # print(f"(4)x_mask.shape: {x_mask.shape}")
+        
         x = self.encoder(x, x_mask)
         mu = self.proj_m(x) * x_mask
 
