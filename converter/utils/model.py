@@ -26,11 +26,7 @@ def generate_path(duration, mask):
     cum_duration = torch.cumsum(duration, 1)
     path = torch.zeros(b, t_x, t_y, dtype=mask.dtype).to(device=device)
 
-    print(f'cum_duration.shape: {cum_duration.shape}')
-    print(f"b: {b}, t_x: {t_x}, t_y: {t_y}")
-    print("b * t_x: ", b * t_x, )
     cum_duration_flat = cum_duration.view(b * t_x)
-    print(f'cum_duration_flat.shape: {cum_duration_flat.shape}')
     path = sequence_mask(cum_duration_flat, t_y).to(mask.dtype)
     path = path.view(b, t_x, t_y)
     # path = path - torch.nn.functional.pad(path, convert_pad_shape([[0, 0], [1, 0], [0, 0]]))[:, :-1]

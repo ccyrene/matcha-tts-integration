@@ -68,7 +68,7 @@ class MatchaTTS(nn.Module):  # 🍵
         self.register_buffer("mel_mean", torch.tensor(data_statistics["mel_mean"]))
         self.register_buffer("mel_std", torch.tensor(data_statistics["mel_std"]))
 
-    def forward(self, x, x_lengths, nfe:int, temperature:float=1.0, length_scale:float=1.0, spks:Optional[torch.Tensor]=None):
+    def forward(self, x, x_lengths, nfe:int, temperature:torch.Tensor, length_scale:torch.Tensor, spks:Optional[torch.Tensor]=None):
 
         # if self.n_spks > 1:
         #     # Get speaker embedding
@@ -76,11 +76,7 @@ class MatchaTTS(nn.Module):  # 🍵
 
         # Get encoder_outputs `mu_x` and log-scaled token durations `logw`
         mu_x, logw, x_mask = self.encoder(x, x_lengths, spks)
-        print(f"mu_x.shape: {mu_x.shape}")
-        print(f"logw.shape: {logw.shape}")
-        print(f"x_mask.shape: {x_mask.shape}")
         w = torch.exp(logw) * x_mask
-        print(f"torch.ceil(w).shape: {torch.ceil(w).shape}")
         # print(f"length_scale.shape: {length_scale.shape}")
         w_ceil = torch.ceil(w) * length_scale.view(-1, 1, 1)
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
@@ -90,24 +86,14 @@ class MatchaTTS(nn.Module):  # 🍵
         # Using obtained durations `w` construct alignment map `attn`
         y_mask = sequence_mask(y_lengths, int(y_max_length_)).unsqueeze(1).to(x_mask.dtype)
         attn_mask = x_mask.unsqueeze(-1) * y_mask.unsqueeze(2)
-        
-        print(f"w_ceil.shape: {w_ceil.shape}")
-        print(f"attn_mask.shape: {attn_mask.shape}")
-        
-        print(f"(0)w_ceil.squeeze(1).shape: {w_ceil.squeeze(1).shape}")
-        print(f"(0)attn_mask.squeeze(1).shape: {attn_mask.squeeze(1).shape}")
-        attn = generate_path(w_ceil.squeeze(1), attn_mask.squeeze(1)).unsqueeze(1)
 
-        print(f"attn.shape: {attn.shape}")
+        attn = generate_path(w_ceil.squeeze(1), attn_mask.squeeze(1)).unsqueeze(1)
 
         # Align encoded text and get mu_y
         mu_y = torch.matmul(attn.squeeze(1).transpose(1, 2), mu_x.transpose(1, 2))
-        print(f"(0)mu_y.shape: {mu_y.shape}")
         mu_y = mu_y.transpose(1, 2)
-        print(f"(1)mu_y.shape: {mu_y.shape}")
         encoder_outputs = mu_y[:, :, :y_max_length]
-        
-        print(f"encoder_outputs.shape: {encoder_outputs.shape}")
+
 
         # Generate sample tracing the probability flow
         

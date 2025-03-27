@@ -192,13 +192,10 @@ class BasicTransformerBlock(nn.Module):
         # Define 3 blocks. Each block has its own normalization layer.
         # 1. Self-Attn
         # if self.use_ada_layer_norm:
-        #     print("INIT HERE1")
         #     self.norm1 = AdaLayerNorm(dim, num_embeds_ada_norm)
         # elif self.use_ada_layer_norm_zero:
-        #     print("INIT HERE2")
         #     self.norm1 = AdaLayerNormZero(dim, num_embeds_ada_norm)
         # else:
-        #     print("INIT HERE3")
         #     self.norm1 = nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine)
         self.norm1 = nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine)
         
@@ -261,15 +258,12 @@ class BasicTransformerBlock(nn.Module):
         # Notice that normalization is always applied before the real computation in the following blocks.
         # 1. Self-Attention
         # if self.use_ada_layer_norm:
-        #     print("HERE1")
         #     norm_hidden_states = self.norm1(hidden_states, timestep)
         # elif self.use_ada_layer_norm_zero:
-        #     print("HERE2")
         #     norm_hidden_states, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.norm1(
         #         hidden_states, timestep, class_labels, hidden_dtype=hidden_states.dtype
         #     )
         # else:
-        #     print("HERE3")
         #     norm_hidden_states = self.norm1(hidden_states)
         norm_hidden_states = self.norm1(hidden_states)
 

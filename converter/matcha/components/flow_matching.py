@@ -28,7 +28,7 @@ class BASECFM(torch.nn.Module, ABC):
         self.estimator = None
 
     # @torch.inference_mode()
-    def forward(self, mu, mask, n_timesteps:int, temperature:float=1.0, spks:Optional[torch.Tensor]=None, cond:Optional[torch.Tensor]=None):
+    def forward(self, mu, mask, n_timesteps:int, temperature:torch.Tensor, spks:Optional[torch.Tensor]=None, cond:Optional[torch.Tensor]=None):
         z = torch.randn_like(mu) * temperature.view(-1, 1, 1)
         t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
         return self.solve_euler(z, t_span=t_span, mu=mu, mask=mask, spks=spks, cond=cond)
